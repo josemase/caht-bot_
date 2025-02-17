@@ -1,0 +1,45 @@
+CREATE DATABASE tienda;
+
+
+CREATE TABLE productos (
+    id SERIAL PRIMARY KEY,
+    categoria TEXT NOT NULL,
+    tipo TEXT NOT NULL,
+    marca TEXT NOT NULL,
+    modelo TEXT NOT NULL,
+    precio DECIMAL(10,2) NOT NULL,
+    specs JSONB
+);
+
+INSERT INTO productos (categoria, tipo, marca, modelo, precio, specs) VALUES
+('computadoras', 'laptop', 'HP', 'Pavilion Gaming', 1299.99, '{"procesador": "Intel i7", "ram": "16GB", "almacenamiento": "512GB SSD", "gpu": "RTX 3060"}'),
+('computadoras', 'laptop', 'Dell', 'XPS 15', 1799.99, '{"procesador": "Intel i9", "ram": "32GB", "almacenamiento": "1TB SSD", "gpu": "RTX 3070"}'),
+('computadoras', 'laptop', 'Apple', 'MacBook Pro', 1999.99, '{"procesador": "M2 Pro", "ram": "32GB", "almacenamiento": "1TB SSD", "gpu": "GPU integrada 19 núcleos"}'),
+('computadoras', 'desktop', 'HP', 'Omen Gaming', 1899.99, '{"procesador": "Intel i9", "ram": "64GB", "almacenamiento": "2TB SSD", "gpu": "RTX 4080"}'),
+('tablets', 'tablet', 'Samsung', 'Galaxy Tab S7', 649.99, '{"pantalla": "11 pulgadas", "almacenamiento": "128GB", "ram": "6GB"}');
+
+CREATE TABLE respuestas_generales (
+    id SERIAL PRIMARY KEY,
+    tipo TEXT NOT NULL,
+    respuesta TEXT NOT NULL
+);
+
+INSERT INTO respuestas_generales (tipo, respuesta) VALUES
+('saludo', '¡Hola! 👋 Bienvenido a Buy n Large. ¿En qué puedo ayudarte hoy?'),
+('saludo', '¡Bienvenido! 🏪 Soy tu asistente virtual. ¿Qué estás buscando?'),
+('saludo', '¡Hola! 💻 Estoy aquí para ayudarte a encontrar la computadora perfecta'),
+('despedida', '¡Gracias por visitarnos! 🙏 ¿Hay algo más en lo que pueda ayudarte?'),
+('despedida', '¡Que tengas un excelente día! ✨ No dudes en volver si necesitas más ayuda'),
+('despedida', '¡Ha sido un placer ayudarte! 🌟 Vuelve pronto');
+
+CREATE TABLE palabras_clave (
+    id SERIAL PRIMARY KEY,
+    categoria TEXT NOT NULL,
+    palabras TEXT[] NOT NULL
+);
+
+INSERT INTO palabras_clave (categoria, palabras) VALUES
+('computadora', '{"laptop", "computadora", "pc", "ordenador", "notebook", "portátil"}'),
+('marca', '{"hp", "dell", "apple", "macbook"}'),
+('precio', '{"precio", "costo", "valor", "cuanto cuesta", "cuánto vale"}'),
+('specs', '{"specs", "características", "especificaciones", "detalles", "memoria", "procesador", "ram"}');
