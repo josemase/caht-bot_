@@ -2,21 +2,63 @@ import json
 import random
 import os
 from rest_framework import viewsets
-from rest_framework.response import Response
+from rest_framework.response import Response as DRFResponse
 from rest_framework.decorators import action
-from .models import Conversation, Message
+from .models import Conversation, Message, respuestas_generales, PalabrasClave, productos
 from .serializers import ConversationSerializer, MessageSerializer
+
+
+def load_responses_from_db():
+    responses = {
+        "respuestas_generales": {},
+        "palabras_clave": {},
+        "productos": {
+            "computadoras": {
+                "laptop": [],
+                "desktop": []
+            }
+        }
+    }
+
+    # Cargar respuestas generales
+    for response in respuestas_generales.objects.all():
+        if response.tipo not in responses['respuestas_generales']:
+            responses['respuestas_generales'][response.tipo] = []
+        responses['respuestas_generales'][response.tipo].append(response.respuesta)
+
+    # Cargar palabras clave
+    for keyword in PalabrasClave.objects.all():
+        responses['palabras_clave'][keyword.categoria] = keyword.palabras
+
+    # Cargar productos
+    for producto in productos.objects.all():
+        if producto.categoria == 'computadoras':
+            if producto.tipo == 'laptop':
+                responses['productos']['computadoras']['laptop'].append({
+                    'marca': producto.marca,
+                    'modelo': producto.modelo,
+                    'precio': producto.precio,
+                    'specs': producto.specs
+                })
+            elif producto.tipo == 'desktop':
+                responses['productos']['computadoras']['desktop'].append({
+                    'marca': producto.marca,
+                    'modelo': producto.modelo,
+                    'precio': producto.precio,
+                    'specs': producto.specs
+                })
+
+    return responses
+
 
 class ChatViewSet(viewsets.ViewSet):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         try:
-            # Cargar el archivo JSON
-            json_path = os.path.join(os.path.dirname(__file__), 'data', 'responses.json')
-            with open(json_path, 'r', encoding='utf-8') as f:
-                self.responses = json.load(f)
+            self.responses = load_responses_from_db()
+            print("Loaded responses:", self.responses)  # Debugging line
         except Exception as e:
-            print(f"Error al cargar responses.json: {e}")
+            print(f"Error al cargar respuestas de la base de datos: {e}")
             self.responses = {
                 "respuestas_generales": {
                     "no_entiendo": ["Lo siento, ha ocurrido un error al cargar las respuestas."]
@@ -52,14 +94,14 @@ class ChatViewSet(viewsets.ViewSet):
                 is_user=False
             )
 
-            return Response({
+            return DRFResponse({
                 'response': response_text,
                 'timestamp': bot_message.timestamp,
                 'conversation_id': conversation.id
             })
         except Exception as e:
             print(f"Error en send_message: {e}")
-            return Response({
+            return DRFResponse({
                 'response': "Lo siento, ha ocurrido un error al procesar tu mensaje.",
                 'timestamp': None,
                 'conversation_id': None
@@ -68,7 +110,7 @@ class ChatViewSet(viewsets.ViewSet):
     def process_message(self, message):
         try:
             message = message.lower()
-            
+
             # Verificar si es un saludo
             if any(word in message for word in ['hola', 'hey', 'buenos días', 'buenas']):
                 return random.choice(self.responses['respuestas_generales']['saludo'])
@@ -82,12 +124,12 @@ class ChatViewSet(viewsets.ViewSet):
                 if marca in message:
                     productos = []
                     # Buscar en laptops
-                    productos.extend([p for p in self.responses['productos']['computadoras']['laptop'] 
-                                   if p['marca'].lower() == marca])
+                    productos.extend([p for p in self.responses['productos']['computadoras']['laptop']
+                                      if p['marca'].lower() == marca])
                     # Buscar en desktops
-                    productos.extend([p for p in self.responses['productos']['computadoras']['desktop'] 
-                                   if p['marca'].lower() == marca])
-                    
+                    productos.extend([p for p in self.responses['productos']['computadoras']['desktop']
+                                      if p['marca'].lower() == marca])
+
                     if productos:
                         response = f"📱 Productos {marca.upper()} disponibles:\n\n"
                         for producto in productos:
@@ -107,13 +149,13 @@ class ChatViewSet(viewsets.ViewSet):
             # Si no se encuentra ninguna palabra clave específica
             if any(word in message for word in self.responses['palabras_clave']['ayuda']):
                 return ("Puedo ayudarte con:\n"
-                       "• Información sobre laptops y computadoras 💻\n"
-                       "• Precios y especificaciones 💰\n"
-                       "• Disponibilidad de productos 📦\n"
-                       "• Recomendaciones según tus necesidades 🎯\n\n"
-                       "¿Qué te gustaría saber?")
+                        "• Información sobre laptops y computadoras 💻\n"
+                        "• Precios y especificaciones 💰\n"
+                        "• Disponibilidad de productos 📦\n"
+                        "• Recomendaciones según tus necesidades 🎯\n\n"
+                        "¿Qué te gustaría saber?")
 
             return random.choice(self.responses['respuestas_generales']['no_entiendo'])
         except Exception as e:
             print(f"Error en process_message: {e}")
-            return "Lo siento, ha ocurrido un error al procesar tu mensaje." 
+            return "Lo sientoo, ha ocurrido un error al procesar tu mensaje."
